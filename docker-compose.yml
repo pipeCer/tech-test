@@ -1,0 +1,44 @@
+version: "3.9"
+
+networks:
+  app-network:
+
+services:
+
+  redis:
+    image: redis
+    networks:
+      - app-network
+
+  server:
+    build: ./server
+    command: gunicorn main:app -w 4 --bind 0.0.0.0:8000 --access-logfile - --error-logfile - --log-level info
+    volumes:
+      - ./server/static:/server/static
+    environment:
+      - BROKER_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - app-network
+  worker:
+    build: ./worker
+    command: celery -A file_job worker --loglevel=info --events
+    volumes:
+      - ./server/static:/static
+    environment:
+      - BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+volumes:
+  server:
