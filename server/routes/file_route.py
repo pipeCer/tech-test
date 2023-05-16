@@ -75,6 +75,8 @@ def download_file(job_id):
     :return: Response(file, mimetype='application/octet-stream')
     """
     task = app.AsyncResult(job_id)
+    if task.status != 'SUCCESS':
+        raise InvalidParameterException('This job is not completed yet.')
     filename = task.get()
     file_path = Path('static', 'files', 'output', filename)
     if not file_path.exists():
