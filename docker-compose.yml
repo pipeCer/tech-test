@@ -30,15 +30,12 @@ services:
       - app-network
   worker:
     build: ./worker
-    command: celery -A file_job worker --loglevel=info --events
+    command: celery -A file_job worker --loglevel=info
     volumes:
-      - ./server/static:/static
+      - ./server/static:/worker/static
     environment:
       - BROKER_URL=redis://redis:6379/0
     depends_on:
       - redis
     networks:
       - app-network
-
-volumes:
-  server:

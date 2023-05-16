@@ -5,9 +5,9 @@ import os
 from celery import Celery
 
 app = Celery(
-    'tasks', broker=os.environ.get(
-        'BROKER_URL', 'redis://localhost:6379/0',
-    ),
+    'tasks',
+    broker=os.environ.get('BROKER_URL'),
+    backend=os.environ.get('BROKER_URL'),
 )
 
 
@@ -18,7 +18,7 @@ def process_file(file_name):
         :param file_name:
     """
     total_plays = {}
-    input_file_path = os.path.join('server/static/files/input/' + file_name)
+    input_file_path = os.path.join('static/files/input/' + file_name)
     with open(input_file_path, 'r') as f:
         reader = csv.reader(f)
         next(reader)
@@ -31,7 +31,7 @@ def process_file(file_name):
     input_filename = file_name.split('.')[0]
     output_filename = f'{input_filename}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.csv'
     output_file_path = os.path.join(
-        'server/static/files/output/' + output_filename,
+        'static/files/output/' + output_filename,
     )
     with open(output_file_path, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -40,3 +40,5 @@ def process_file(file_name):
             for date in sorted(total_plays[song]):
                 total_num_plays = total_plays[song][date]
                 writer.writerow([song, date, total_num_plays])
+
+    return output_filename
