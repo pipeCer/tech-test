@@ -1,15 +1,25 @@
 import csv
 import datetime
+import os
+
+from celery import Celery
+
+app = Celery(
+    'tasks', broker=os.environ.get(
+        'BROKER_URL', 'redis://localhost:6379/0',
+    ),
+)
 
 
+@app.task
 def process_file(file_name):
     """
         function that process a file and store the result in a new file in the output folder
         :param file_name:
     """
     total_plays = {}
-
-    with open(file_name, 'r') as f:
+    input_file_path = os.path.join('server/static/files/input/' + file_name)
+    with open(input_file_path, 'r') as f:
         reader = csv.reader(f)
         next(reader)
         for row in reader:
@@ -18,11 +28,12 @@ def process_file(file_name):
             total_plays[song].setdefault(date, 0)
             total_plays[song][date] += int(num_plays)
 
-    input_filename = file_name.split('/')[-1].split('.')[0]
-    output_filename = input_filename + '_' + \
-        datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.csv'
-    full_output_filename = '../server/static/files/output/' + output_filename
-    with open(full_output_filename, 'w', newline='') as f:
+    input_filename = file_name.split('.')[0]
+    output_filename = f'{input_filename}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.csv'
+    output_file_path = os.path.join(
+        'server/static/files/output/' + output_filename,
+    )
+    with open(output_file_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['Song', 'Date', 'Total Number of Plays for Date'])
         for song in total_plays:
